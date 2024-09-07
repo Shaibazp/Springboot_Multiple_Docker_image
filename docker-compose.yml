@@ -1,0 +1,46 @@
+#version: "3.1"
+services:
+  app:
+    container_name: spring-app
+    image: app
+#    build: .
+    ports:
+      - 8181:8181
+    environment:
+      MYSQL_HOST: mysqldb
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_PORT: 3306
+    depends_on:
+      - mysqldb
+ 
+  itemmenu:
+    container_name: itemmenu
+    image: itemmenu
+#    volumes:
+#      -  wwwe:/var/lib/mysql
+#    build: .
+    ports:
+      - 8182:8181
+    environment:
+      MYSQL_HOST: mysqldb
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_PORT: 3306
+    depends_on:
+      - mysqldb
+
+  mysqldb: 
+    container_name: mysqldb
+    image: mysql
+    volumes:
+      -  wwwe:/var/lib/mysql
+    ports: 
+     - 3307:3306   
+    environment:
+      MYSQL_DATABASE: springboot
+      MYSQL_ROOT_PASSWORD: root
+volumes:
+  wwwe:
+    external: true
+
