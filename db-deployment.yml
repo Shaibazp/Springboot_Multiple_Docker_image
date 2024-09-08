@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  labels:
+   app: mysql
+   tier: databse
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+    tier: database
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+      tier: database
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+     labels:
+       app: mysql
+       tier: database
+    spec:
+      containers:
+        - image: mysql:latest
+          name: mysql
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: sql-configs
+                  key:  MYSQL_DATABASE
+            - name: MYSQL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: sql-configs
+                  key:  MYSQL_HOST
+            - name: MYSQL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: sql-configs
+                  key:  MYSQL_PORT
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sql-secret
+                  key:  MYSQL_ROOT_PASSWORD
+          ports:
+            - containerPort: 3307
+              name: mysql
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
+---
+# Define a 'Service' To Expose mysql to Other Services
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svcs  # DNS name
+  labels:
+    app: mysql
+    tier: database
+spec:
+  ports:
+    - protocol: "TCP"
+      port: 3307
+      targetPort: 3307
+  selector:       # mysql Pod Should contain same labels
+    type: NodePort
+    
+    
+    
+    
+    
+    
+#MYSQL generate Secrates
+#====================
+#
+#kubectl create configmap sql-configss --from-literal=MYSQL_DATABASE=springboot --from-literal=MYSQL_USER=root  --from-literal=MYSQL_PORT=3306 --from-literal=MYSQL_HOST=10.97.50.205
+#
+#kubectl create secret generic sql-secret --from-literal=MYSQL_ROOT_PASSWORD=root --from-literal=MYSQL_PASSWORD=root
+#
+#================================================================
+#
+#
+#- name: MYSQL_DATABASE
+#  valueFrom:
+#    configMapKeyRef:
+#      name: sql-configs
+#      key:  MYSQL_DATABASE
+#- name: MYSQL_HOST
+#  valueFrom:
+#    configMapKeyRef:
+#      name: sql-configs
+#      key:  MYSQL_HOST
+#=====================================================================
+#kubectl run mysql-pod --image=mysql --dry-run=client -o yaml > mysql-pod.yaml
+#
+#
+#kubectl expose pod mysql-pod --name=mysql-svc --port=3306 --target-port=3306    
+         
